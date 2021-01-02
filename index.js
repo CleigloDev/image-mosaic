@@ -21,17 +21,21 @@ context.drawImage(image, 0, 0);
 
 
 const { width, height } = sizeOf('./imagesIn/in.jpg');
-const mosaicSquareDimension = 25;
+const filePath = "./images";
+const filePathResized = "./imagesResized";
+const mosaicSquareDimension = 5;
 
 var colorMap = {};
+var colorMapImage = {};
 var mosaicColors = {};
-const testImagesPath = ['./images/test.jpg', './images/test1.jpg'];
+var images = [];
+var imageResized = [];
 
 const defineColorMapMosaicImage = () => {
-    for(var y = 0; y < height; y += 25) {
-        for(var x = 0; x < width; x += 25) {
+    for(var y = 0; y < height; y += mosaicSquareDimension) {
+        for(var x = 0; x < width; x += mosaicSquareDimension) {
             let colorValue = getAreaColor(x, y, mosaicSquareDimension, mosaicSquareDimension).value;
-            colorMap[x+"-"+y] = {
+            colorMapImage[x+"-"+y] = {
                 "r": colorValue[0],
                 "g": colorValue[1],
                 "b": colorValue[2]
@@ -41,13 +45,43 @@ const defineColorMapMosaicImage = () => {
 };
 
 const defineFinalColorMap = () => {
-    const keys = Object.keys(colorMap);
+    const colorMapKeys = Object.keys(colorMapImage);
+    const mosaicKeys = Object.keys(mosaicColors);
+
+    colorMapKeys.map(coords => {
+        var minDiff;
+        var imageToUse;
+        mosaicKeys.map((imageRef, index) => {
+            let redImage = colorMapImage[coords].r;
+            let greenImage = colorMapImage[coords].g;
+            let blueImage = colorMapImage[coords].b;
+
+            let redMosaic = mosaicColors[imageRef].r;
+            let greenMosaic = mosaicColors[imageRef].g;
+            let blueMosaic = mosaicColors[imageRef].b;
+
+            const diff = Math.abs((redImage - redMosaic) + (greenImage - greenMosaic) + (blueImage - blueMosaic));
+
+            if(diff < minDiff || index === 0) {
+                minDiff = diff;
+                imageToUse = imageRef;
+            }
+        });
+
+        colorMap[coords] = {
+		    "path": imageToUse
+        };
+    });
 };
 
 const getAreaColor = (xCoords, yCoords, frameWidth, frameHeight) => {
     const imageData = context.getImageData(xCoords, yCoords, frameWidth, frameHeight);
     return fac.prepareResult(fac.getColorFromArray4(imageData.data, {}));
 };
+
+const redifinePath = (path) => {
+    return filePathResized+path.split(filePath)[1];
+}
 
 const getMosaicImageColor = (aImagesPath) => {
     return new Promise((resolve, reject) => {
@@ -57,6 +91,7 @@ const getMosaicImageColor = (aImagesPath) => {
                 .then(color => {
                     console.table(color);
                     let imageColors = {};
+                    imagePath = redifinePath(imagePath);
                     imageColors[imagePath] = {
                         "r": color.value[0],
                         "g": color.value[1],
@@ -92,6 +127,8 @@ const resizeImage = (imagePath, options) => {
         .toBuffer()
         .then(data => {
             const base64String = data.toString("base64");
+            imagePath = redifinePath(imagePath);
+            imageResized.push(imagePath);
             fs.writeFile(imagePath, base64String, 'base64', function(err) {
                 if (err) {
                     console.error(err);
@@ -108,14 +145,22 @@ const resizeImage = (imagePath, options) => {
     });
 };
 
-const generateMosaic = (aImagesPath) => {
+const generateMosaic = () => {
     return new Promise((resolve, reject) => {
-        const imagesToMerge = aImagesPath.map((imagePath, index) => {
-            return { src: imagePath, x: index*200, y: 0 }
-        })
+        let imagesToMerge = [];
+        for(var y = 0; y < height; y += mosaicSquareDimension) {
+            for(var x = 0; x < width; x += mosaicSquareDimension) {
+                imagesToMerge.push(Object.assign({}, {
+                    src:  colorMap[x+"-"+y].path,
+                    x: x,
+                    y: y,
+                }));
+            }
+        }
+
         mergeImages(imagesToMerge, {
-            width: 400,
-            height: 200,
+            width: width,
+            height: height,
             Canvas: Canvas,
             Image: Image
         }).then(base64String => {
@@ -136,32 +181,37 @@ const generateMosaic = (aImagesPath) => {
     });
 };
 
-defineColorMapMosaicImage();
+fs.readdir(filePath, function (err, files) {
+    if (err) {
+        return console.error('Unable to scan directory: ' + err);
+    }
 
-// resizeImage('./imagesIn/in.jpg', {width: 5000, height: 2500});
+    files.map((file) => {
+        return images.push(filePath +"/"+ file);
+    });
 
-// const testResized = resizeImage('./images/test.jpg');
-// const test1Resized = resizeImage('./images/test1.jpg');
-
-// getMosaicImageColor(testImagesPath)
-// .then(() => {
-//     Promise.all([
-//         testResized,
-//         test1Resized
-//     ])
-//     .then(() => {
-        // console.log("Resize success!");
-        // generateMosaic(testImagesPath)
-        // .then(() => {
-        //     console.log("Images merged!");
-        // })
-        // .catch((err) => {
-        //     console.error(err);
-        // });
-//     })
-//     .catch((err) => {
-//         console.error(err);
-//     });    
-// });
+    getMosaicImageColor(images)
+    .then(() => {
+        let imageResizingPromise = images.map((filePath) => {
+            return resizeImage(filePath);
+        })
+        Promise.all(imageResizingPromise)
+        .then(() => {
+            console.log("Resize success!");
+            defineColorMapMosaicImage();
+            defineFinalColorMap();
+            generateMosaic(imageResized)
+            .then(() => {
+                console.log("Images merged!");
+            })
+            .catch((err) => {
+                console.error(err);
+            });
+        })
+        .catch((err) => {
+            console.error(err);
+        });    
+    });
+});
 
 
