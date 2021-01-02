@@ -23,7 +23,7 @@ context.drawImage(image, 0, 0);
 const { width, height } = sizeOf('./imagesIn/in.jpg');
 const filePath = "./images";
 const filePathResized = "./imagesResized";
-const mosaicSquareDimension = 5;
+const mosaicSquareDimension = 20;
 
 var colorMap = {};
 var colorMapImage = {};
@@ -32,6 +32,7 @@ var images = [];
 var imageResized = [];
 
 const defineColorMapMosaicImage = () => {
+    console.info("DEFINING COLOR MAP");
     for(var y = 0; y < height; y += mosaicSquareDimension) {
         for(var x = 0; x < width; x += mosaicSquareDimension) {
             let colorValue = getAreaColor(x, y, mosaicSquareDimension, mosaicSquareDimension).value;
@@ -45,6 +46,7 @@ const defineColorMapMosaicImage = () => {
 };
 
 const defineFinalColorMap = () => {
+    console.info("DEFINING FINAL COLOR MAP");
     const colorMapKeys = Object.keys(colorMapImage);
     const mosaicKeys = Object.keys(mosaicColors);
 
@@ -84,8 +86,10 @@ const redifinePath = (path) => {
 }
 
 const getMosaicImageColor = (aImagesPath) => {
+    console.info("DEFINING MOSAIC COLOR MAP");
     return new Promise((resolve, reject) => {
-        const colorPromises = aImagesPath.map((imagePath) => {
+        const colorPromises = aImagesPath.map((imagePath, index) => {
+            console.info("processing image n°: " + index);
             return new Promise((resolve, reject) => {
                 getAverageColor(imagePath)
                 .then(color => {
@@ -120,6 +124,7 @@ const getMosaicImageColor = (aImagesPath) => {
 };
 
 const resizeImage = (imagePath, options) => {
+    console.info("Resizing image: " + imagePath);
     return new Promise((resolve, reject) => {
         options = options ? options : { width: mosaicSquareDimension, height: mosaicSquareDimension };
         sharp(imagePath)
@@ -146,6 +151,7 @@ const resizeImage = (imagePath, options) => {
 };
 
 const generateMosaic = () => {
+    console.info("GENERATING MOSAIC IMAGE");
     return new Promise((resolve, reject) => {
         let imagesToMerge = [];
         for(var y = 0; y < height; y += mosaicSquareDimension) {
