@@ -8,6 +8,44 @@ import sizeOf from 'image-size';
 import sharp from 'sharp';
 const { Canvas, Image } = canvas;
 
+var mosaicColors = {};
+const testImagesPath = ['./images/test.jpg', './images/test1.jpg'];
+
+const getMosaicImageColor = (aImagesPath) => {
+    return new Promise((resolve, reject) => {
+        const colorPromises = aImagesPath.map((imagePath) => {
+            return new Promise((resolve, reject) => {
+                getAverageColor(imagePath)
+                .then(color => {
+                    console.table(color);
+                    let imageColors = {};
+                    imageColors[imagePath] = {
+                        "r": color.value[0],
+                        "g": color.value[0],
+                        "b": color.value[0]
+                    };
+                    resolve(imageColors);
+                })
+                .catch(err => {
+                    console.error(err);
+                    reject(err);
+                });
+            });
+        });
+
+        Promise.all(colorPromises)
+        .then((aColors) => {
+            aColors.map(color => {
+                mosaicColors = {...mosaicColors, ...color};
+            })
+            resolve();
+        })
+        .catch((err) => {
+            reject(err);
+        })
+    });
+}
+
 const resizeImage = (imagePath) => {
     return new Promise((resolve, reject) => {
         sharp(imagePath)
@@ -43,7 +81,7 @@ const generateMosaic = (aImagesPath) => {
             Image: Image
         }).then(base64String => {
             base64String = base64String.split(",")[1];
-            fs.writeFile("./out.jpg", base64String, 'base64', function(err) {
+            fs.writeFile("./imagesOut/out.jpg", base64String, 'base64', function(err) {
                 if (err) {
                     console.error(err);
                     reject(err);
@@ -62,27 +100,25 @@ const generateMosaic = (aImagesPath) => {
 const testResized = resizeImage('./images/test.jpg');
 const test1Resized = resizeImage('./images/test1.jpg');
 
-Promise.all([
-    testResized,
-    test1Resized
-])
+getMosaicImageColor(testImagesPath)
 .then(() => {
-    console.log("Resize success!");
-    generateMosaic(['./images/test.jpg', './images/test1.jpg'])
+    Promise.all([
+        testResized,
+        test1Resized
+    ])
     .then(() => {
-        console.log("Images merged!");
+        console.log("Resize success!");
+        generateMosaic(testImagesPath)
+        .then(() => {
+            console.log("Images merged!");
+        })
+        .catch((err) => {
+            console.error(err);
+        })
     })
     .catch((err) => {
         console.error(err);
-    })
-})
-.catch((err) => {
-    console.error(err);
+    });    
 });
-
-// getAverageColor('./images/test.jpg').then(color => {
-//     console.log(color);
-// });
-
 
 
