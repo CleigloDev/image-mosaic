@@ -67,7 +67,7 @@ const defineFinalColorMap = () => {
             const redDiff = Math.abs((redImage - redMosaic));
             const greenDiff = Math.abs((greenImage - greenMosaic));
             const blueDiff = Math.abs((blueImage - blueMosaic));
-            
+
             if((redDiff <= minRedDiff && greenDiff <= minGreenDiff && blueDiff <= minBlueDiff) 
                 || index === 0) {
                 minRedDiff = redDiff;
@@ -117,11 +117,14 @@ const getMosaicImageColor = (aImagesPath) => {
             });
         });
 
+        console.info("DETECTING COLOR OF IMAGES");
+
         Promise.all(colorPromises)
         .then((aColors) => {
             aColors.map(color => {
                 mosaicColors = {...mosaicColors, ...color};
-            })
+            });
+            console.info("COLOR DETECTED");
             resolve();
         })
         .catch((err) => {
