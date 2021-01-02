@@ -1,0 +1,19 @@
+{
+  "name": "image-mosaic",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Create mosaic from an image",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "fast-average-color-node": "^1.0.3",
+    "image-size": "^0.9.3",
+    "merge-images": "^2.0.0",
+    "save": "^2.4.0",
+    "sharp": "^0.27.0"
+  }
+}
