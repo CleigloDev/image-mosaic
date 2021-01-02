@@ -118,5 +118,8 @@ dist
 
 #images for testing
 
-.images/*
-.imagesOut/*
+images/
+imagesOut/
+imagesIn/
+imagesOut/
+imagesResized/
