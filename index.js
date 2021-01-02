@@ -51,8 +51,10 @@ const defineFinalColorMap = () => {
     const mosaicKeys = Object.keys(mosaicColors);
 
     colorMapKeys.map(coords => {
-        var minDiff;
-        var imageToUse;
+        var minRedDiff = 0;
+        var minGreenDiff = 0;
+        var minBlueDiff = 0;
+        var imageToUse = null;
         mosaicKeys.map((imageRef, index) => {
             let redImage = colorMapImage[coords].r;
             let greenImage = colorMapImage[coords].g;
@@ -62,10 +64,15 @@ const defineFinalColorMap = () => {
             let greenMosaic = mosaicColors[imageRef].g;
             let blueMosaic = mosaicColors[imageRef].b;
 
-            const diff = Math.abs((redImage - redMosaic) + (greenImage - greenMosaic) + (blueImage - blueMosaic));
-
-            if(diff < minDiff || index === 0) {
-                minDiff = diff;
+            const redDiff = Math.abs((redImage - redMosaic));
+            const greenDiff = Math.abs((greenImage - greenMosaic));
+            const blueDiff = Math.abs((blueImage - blueMosaic));
+            
+            if((redDiff <= minRedDiff && greenDiff <= minGreenDiff && blueDiff <= minBlueDiff) 
+                || index === 0) {
+                minRedDiff = redDiff;
+                minGreenDiff = greenDiff;
+                minBlueDiff = blueDiff;
                 imageToUse = imageRef;
             }
         });
