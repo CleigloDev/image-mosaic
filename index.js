@@ -23,7 +23,7 @@ context.drawImage(image, 0, 0);
 const { width, height } = sizeOf('./imagesIn/in.jpg');
 const filePath = "./images";
 const filePathResized = "./imagesResized";
-const mosaicSquareDimension = 20;
+const mosaicSquareDimension = 100;
 
 var colorMap = {};
 var colorMapImage = {};
@@ -41,6 +41,7 @@ const defineColorMapMosaicImage = () => {
                 "g": colorValue[1],
                 "b": colorValue[2]
             }
+            console.info("COLOR MAP COORDS: " + x+"-"+y);
         }
     }
 };
@@ -90,7 +91,7 @@ const getAreaColor = (xCoords, yCoords, frameWidth, frameHeight) => {
 
 const redifinePath = (path) => {
     return filePathResized+path.split(filePath)[1];
-}
+};
 
 const getMosaicImageColor = (aImagesPath) => {
     console.info("DEFINING MOSAIC COLOR MAP");
