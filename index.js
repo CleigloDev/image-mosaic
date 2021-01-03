@@ -145,7 +145,7 @@ const resizeImage = (imagePath, options) => {
             const base64String = data.toString("base64");
             imagePath = redifinePath(imagePath);
             imageResized.push(imagePath);
-            fs.writeFile(imagePath, base64String, 'base64', function(err) {
+            fs.writeFile(imagePath, base64String, 'base64', (err) => {
                 if (err) {
                     console.error(err);
                     reject(err);
@@ -182,7 +182,7 @@ const generateMosaic = () => {
             Image: Image
         }).then(base64String => {
             base64String = base64String.split(",")[1];
-            fs.writeFile("./imagesOut/out.jpg", base64String, 'base64', function(err) {
+            fs.writeFile("./imagesOut/out.jpg", base64String, 'base64', (err) => {
                 if (err) {
                     console.error(err);
                     reject(err);
@@ -198,7 +198,7 @@ const generateMosaic = () => {
     });
 };
 
-fs.readdir(filePath, function (err, files) {
+fs.readdir(filePath, (err, files) => {
     if (err) {
         return console.error('Unable to scan directory: ' + err);
     }
