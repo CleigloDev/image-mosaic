@@ -9,9 +9,13 @@ import sharp from 'sharp';
 
 const { Canvas, Image, loadImage, createCanvas } = canvas;
 const fac = new FastAverageColor();
+const imageToMosaicPath = './imagesIn/';
+const imageOutputPath = './imagesOut/';
+const filePath = "./images/";
+const filePathResized = "./imagesResized/";
 
 // ------------------------ Image Definition --------------------------------- //
-const image = await loadImage('./imagesIn/in.jpg');
+const image = await loadImage(imageToMosaicPath+'in.jpg');
 const naturalWidth = image.width;
 const naturalHeight = image.height;
 const imageCanvas = createCanvas(naturalWidth, naturalHeight);
@@ -20,10 +24,9 @@ context.drawImage(image, 0, 0);
 // ------------------------ Image Definition --------------------------------- //
 
 
-const { width, height } = sizeOf('./imagesIn/in.jpg');
-const filePath = "./images";
-const filePathResized = "./imagesResized";
+const { width, height } = sizeOf(imageToMosaicPath+'in.jpg');
 const mosaicSquareDimension = 100;
+const frameToAnalize = 30;
 
 var colorMap = {};
 var colorMapImage = {};
@@ -33,9 +36,9 @@ var imageResized = [];
 
 const defineColorMapMosaicImage = () => {
     console.info("DEFINING COLOR MAP");
-    for(var y = 0; y < height; y += mosaicSquareDimension) {
-        for(var x = 0; x < width; x += mosaicSquareDimension) {
-            let colorValue = getAreaColor(x, y, mosaicSquareDimension, mosaicSquareDimension).value;
+    for(var y = 0; y < height; y += frameToAnalize) {
+        for(var x = 0; x < width; x += frameToAnalize) {
+            let colorValue = getAreaColor(x, y, frameToAnalize, frameToAnalize).value;
             colorMapImage[x+"-"+y] = {
                 "r": colorValue[0],
                 "g": colorValue[1],
@@ -165,24 +168,24 @@ const generateMosaic = () => {
     console.info("GENERATING MOSAIC IMAGE");
     return new Promise((resolve, reject) => {
         let imagesToMerge = [];
-        for(var y = 0; y < height; y += mosaicSquareDimension) {
-            for(var x = 0; x < width; x += mosaicSquareDimension) {
+        for(var y = 0; y < height; y += frameToAnalize) {
+            for(var x = 0; x < width; x += frameToAnalize) {
                 imagesToMerge.push(Object.assign({}, {
-                    src:  colorMap[x+"-"+y].path,
-                    x: x,
-                    y: y,
+                    src: colorMap[x+"-"+y].path,
+                    x: (x/frameToAnalize)*mosaicSquareDimension,
+                    y: (y/frameToAnalize)*mosaicSquareDimension,
                 }));
             }
         }
 
         mergeImages(imagesToMerge, {
-            width: width,
-            height: height,
+            width: (width/frameToAnalize)*mosaicSquareDimension,
+            height: (height/frameToAnalize)*mosaicSquareDimension,
             Canvas: Canvas,
             Image: Image
         }).then(base64String => {
             base64String = base64String.split(",")[1];
-            fs.writeFile("./imagesOut/out.jpg", base64String, 'base64', (err) => {
+            fs.writeFile(imageOutputPath+'out.jpg', base64String, 'base64', (err) => {
                 if (err) {
                     console.error(err);
                     reject(err);
@@ -204,14 +207,14 @@ fs.readdir(filePath, (err, files) => {
     }
 
     files.map((file) => {
-        return images.push(filePath +"/"+ file);
+        return images.push(filePath + file);
     });
 
     getMosaicImageColor(images)
     .then(() => {
         let imageResizingPromise = images.map((filePath) => {
             return resizeImage(filePath);
-        })
+        });
         Promise.all(imageResizingPromise)
         .then(() => {
             console.log("Resize success!");
