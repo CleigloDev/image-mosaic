@@ -8,20 +8,6 @@ import sharp from 'sharp';
 
 const { Canvas, Image, loadImage, createCanvas } = canvas;
 const fac = new FastAverageColor();
-const imageToMosaicPath = './imagesIn/in.jpg';
-const imageOutputPath = './imagesOut/';
-const outputFileName = 'out.jpg';
-const filePath = "./images/";
-const filePathResized = "./imagesResized/";
-
-// ------------------------ Image Definition --------------------------------- //
-const image = await loadImage(imageToMosaicPath);
-const width = image.width;
-const height = image.height;
-const imageCanvas = createCanvas(width, height);
-const context = imageCanvas.getContext('2d');
-context.drawImage(image, 0, 0);
-// ------------------------ Image Definition --------------------------------- //
 
 const mosaicSquareDimension = 110;
 const frameToAnalize = 30;
@@ -31,6 +17,8 @@ var colorMapImage = {};
 var mosaicColors = {};
 var images = [];
 var imageResized = [];
+var filePathResized = "./imagesResized/";
+
 
 const defineColorMapMosaicImage = () => {
     console.info("DEFINING COLOR MAP");
@@ -224,43 +212,63 @@ const compressOutput = (imageOutPath, fileName) => {
     });
 };
 
-fs.readdir(filePath, (err, files) => {
-    if (err) {
-        return console.error('Unable to scan directory: ' + err);
-    }
 
-    files.map((file) => {
-        return images.push(filePath + file);
-    });
+const createMosaic = async(imageToMosaic, imageOutput, outputFile, file, fileResized) => {
+    const imageToMosaicPath = imageToMosaic || './imagesIn/in.jpg';
+    const imageOutputPath = imageOutput || './imagesOut/';
+    const outputFileName = outputFile || 'out.jpg';
+    const filePath = file || "./images/";
+    filePathResized = fileResized || filePathResized;
+
+    // ------------------------ Image Definition --------------------------------- //
+    const image = await loadImage(imageToMosaicPath);
+    const width = image.width;
+    const height = image.height;
+    const imageCanvas = createCanvas(width, height);
+    const context = imageCanvas.getContext('2d');
+    context.drawImage(image, 0, 0);
+    // ------------------------ Image Definition --------------------------------- //
 
 
-    let imageResizingPromise = images.map((filePath) => {
-        return resizeImage(filePath);
-    });
+    fs.readdir(filePath, (err, files) => {
+        if (err) {
+            return console.error('Unable to scan directory: ' + err);
+        }
 
-    let promiseColorMap = defineColorMapMosaicImage();
-    let promiseMosaicImageColor = getMosaicImageColor(images);
+        files.map((file) => {
+            return images.push(filePath + file);
+        });
 
-    let allPromises = [...imageResizingPromise, 
-        promiseColorMap,
-        promiseMosaicImageColor
-    ];
 
-    Promise.all(allPromises)
-    .then(() => {
-        defineFinalColorMap();
-        generateMosaic()
+        let imageResizingPromise = images.map((filePath) => {
+            return resizeImage(filePath);
+        });
+
+        let promiseColorMap = defineColorMapMosaicImage();
+        let promiseMosaicImageColor = getMosaicImageColor(images);
+
+        let allPromises = [...imageResizingPromise, 
+            promiseColorMap,
+            promiseMosaicImageColor
+        ];
+
+        Promise.all(allPromises)
         .then(() => {
-            console.log("Images merged!");
-            compressOutput(imageOutputPath, outputFileName);
+            defineFinalColorMap();
+            generateMosaic()
+            .then(() => {
+                console.log("Images merged!");
+                compressOutput(imageOutputPath, outputFileName);
+            })
+            .catch((err) => {
+                console.error(err);
+            });
         })
         .catch((err) => {
             console.error(err);
-        });
-    })
-    .catch((err) => {
-        console.error(err);
-    });    
-});
+        });    
+    });
 
+};
 
+module.exports = createMosaic;
